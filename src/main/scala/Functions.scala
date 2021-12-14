@@ -1,7 +1,9 @@
 import cats.Monad
+import cats.effect.IO.sleep
+
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
-
+import java.time.Duration
 
 object Functions {
   def rowMajorToMinor[A](rowMajorList: List[List[A]]): List[List[A]] = {
@@ -15,6 +17,12 @@ object Functions {
           }
           go(elem, acc, List.empty[List[A]])
         })
+  }
+
+  def slowly[A](a: => A): A = {
+    val value = a
+    sleep
+
   }
 }
 

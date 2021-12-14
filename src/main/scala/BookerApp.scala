@@ -19,15 +19,14 @@ import scala.util.control.Exception
 object BookerApp extends App {
 
   val program = for {
-    conf <- EitherT.fromEither[IO](ConfigSource.default.load[Configuration])
-    driver <- EitherT.right[ConfigReaderFailures](WebDriverFactory.safariDriver())
-    driver2 <- EitherT.right[ConfigReaderFailures](WebDriverFactory.chromeDriver())
-    //_ <- EitherT.right(Kahuna.book(driver, conf.kahunaURL, conf.schedule))
-  } yield driver.close()
+    conf <- IO(ConfigSource.default.loadOrThrow[Configuration])
+    _ <-
+      WebDriverFactory.chromeDriver()
+        .bracket { driver =>
+          Kahuna.book(driver, conf.kahunaURL, conf.schedule)
+        } (driver => IO(driver.close()))
+  } yield ()
 
-  val meEitherT = MonadError[EitherT[IO, ConfigReaderFailures, *], ConfigReaderFailures]
-  val meIO = MonadError[EitherT[IO, ConfigReaderFailures, *], Throwable]
+  program.unsafeRunSync()
 
-  //meIO.handleError(program)(_.printStackTrace()).value.unsafeRunSync()
-  meEitherT.handleError(program)().value.unsafeRunSync()
 }

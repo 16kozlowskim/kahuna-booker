@@ -10,4 +10,3 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-effect" % "3.3.0",
   "org.typelevel" %% "cats-core" % "2.3.0"
 )
-addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
