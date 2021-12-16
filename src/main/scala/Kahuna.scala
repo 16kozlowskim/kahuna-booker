@@ -15,21 +15,29 @@ import scala.util.{Failure, Success, Try}
 
 
 object Kahuna {
-  @tailrec
-  def tryIOFor[A](fa: IO[A])(duration: FiniteDuration): IO[A] = {
+  def retryIOFor[A](fa: IO[A])(duration: FiniteDuration): IO[A] = {
     if (duration <= 0) fa
     else {
       val delay = duration min 1.second
-      fa.delayBy(delay).handleErrorWith(_ => tryIOFor(fa)(duration - delay))
+      fa.delayBy(delay).attempt.flatMap {
+        case Left(_) => retryIOFor(fa)(duration - delay)
+        case Right(a) => IO(a)
+      }
     }
   }
 
-  def book(driver: WebDriver, kahunaURL: String, schedule: Schedule): IO[Unit] = {
+  def book(driver: WebDriver, kahunaURL: String, schedule: Schedule, retryTime: Int): IO[Unit] = {
 
+    val retryTimeSeconds = retryTime.seconds
     for {
-      _ <- IO {driver.get(kahunaURL)}
-      _ <-
-
+      _ <- IO(driver.get(kahunaURL))
+      _ <- retryIOFor(IO(driver.switchTo().frame(0)))(retryTimeSeconds)
+      onCalTabs <- retryIOFor(IO(driver.findElement(new ById("online-calendar-tabs"))))(retryTimeSeconds)
+      badminton <- retryIOFor(IO(onCalTabs.findElement(new ByLinkText("Badminton"))))(retryTimeSeconds)
+      _ <- retryIOFor(IO(badminton.click()))(retryTimeSeconds)
+      onCalTable <- retryIOFor(IO(driver.findElement(new ById("online-calendar-table"))))(retryTimeSeconds)
+      table <- retryIOFor(IO(onCalTable.findElement(new ByCssSelector("tbody"))))(retryTimeSeconds)
+      tableRows <- retryIOFor
     } yield ()
     IO {
       driver.get(kahunaURL)

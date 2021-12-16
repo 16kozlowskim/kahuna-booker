@@ -21,9 +21,9 @@ object BookerApp extends App {
   val program = for {
     conf <- IO(ConfigSource.default.loadOrThrow[Configuration])
     _ <-
-      WebDriverFactory.chromeDriver()
+      WebDriverFactory.safariDriver()
         .bracket { driver =>
-          Kahuna.book(driver, conf.kahunaURL, conf.schedule)
+          Kahuna.book(driver, conf.kahunaURL, conf.schedule, conf.retryTime)
         } (driver => IO(driver.close()))
   } yield ()
 
